@@ -6,10 +6,10 @@ This script was created primarily to automate signing OpenCore binaries.
 
 ### SecureBoot 101
 
-![assets/sb=scheme.jpg]
+![SecureBoot key hierarchy](assets/sb-scheme.jpg)
 The UEFI specification defines four secure, non-volatile variables, which are used to control the secure boot system. They are: 
 
-1. PK - Platform Key. Has *at most one* entry containing public key. It's private counterpart is used to sign updates to PK and KEK (not to db/dbx).  
+1. PK - Platform Key. Has *at most one* entry containing public key. Its private counterpart is used to sign updates to PK and KEK (not to db/dbx).  
 If it's empty, system is in *setup mode*, turning off secure boot and allowing free update of any variable. Immediately after PK is written, system is in *user mode*, and variables must be signed.  
 Essentially, this is system owner key.
 
@@ -42,7 +42,7 @@ https://github.com/perez987/OpenCore-and-UEFI-Secure-Boot
 
 - Generate and cross-sign keys
 - Download and include Microsoft DB (and optionally KEK) keys 
-- Download chosed OpenCore version and sign all necessary boot files
+- Download chosen OpenCore version and sign all necessary boot files
 - Sign other .efi executable files (placed into 'user' folder)
 
 ### Requirements
@@ -95,7 +95,7 @@ There is an option to pull stock KEK, db (and dbx) records, add your keys and si
 
 - [x] Implement removePK key.
 - [ ] Rewrite logic to better protect keys from accidental deletion
-- [ ] Add an option to backup currently installed keys and reuse them
+- [ ] Add an option to back up currently installed keys and reuse them
 - [ ] Add an option to choose RSA strength - currently 2048 for compatibility
 - [x] Provide Dockerfile
 - [x] Set LICENSE
