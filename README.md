@@ -1,0 +1,3 @@
+# sbsign
+
+SecureBoot signing script
