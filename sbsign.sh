@@ -419,8 +419,8 @@ handle_opencore() {
         "download/X64/EFI/OC/Tools/OpenShell.efi:signed/EFI/OC/Tools/OpenShell.efi"
         "download/X64/EFI/BOOT/BOOTx64.efi:signed/EFI/BOOT/BOOTx64.efi"
         "download/HfsPlus.efi:signed/EFI/OC/Drivers/HfsPlus.efi"
-        # "binaries/btrfs_x64.efi:signed/EFI/OC/Drivers/btrfs_x64.efi"
-        # "binaries/ext4_x64.efi:signed/EFI/OC/Drivers/ext4_x64.efi"
+        "binaries/btrfs_x64.efi:signed/EFI/OC/Drivers/btrfs_x64.efi"
+        "binaries/ext4_x64.efi:signed/EFI/OC/Drivers/ext4_x64.efi"
     )
 
     for file_info in "${FILES_TO_SIGN[@]}"; do
