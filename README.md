@@ -7,6 +7,7 @@ This script was created primarily to automate signing OpenCore binaries.
 ### SecureBoot 101
 
 ![SecureBoot key hierarchy](assets/sb-scheme.jpg)
+
 The UEFI specification defines four secure, non-volatile variables, which are used to control the secure boot system. They are: 
 
 1. PK - Platform Key. Has *at most one* entry containing public key. Its private counterpart is used to sign updates to PK and KEK (not to db/dbx).  
@@ -32,23 +33,23 @@ File formats used:
 
 ### Further reading
 
-https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot
-https://wiki.gentoo.org/wiki/User:Sakaki/Sakaki%27s_EFI_Install_Guide/Configuring_Secure_Boot#Method_2:_Inserting_Keys_via_PC.27s_BIOS_GUI
-https://habr.com/ru/articles/273497/ (Russian)
-https://forums.lenovo.com/t5/ThinkPad-T400-T500-and-newer-T-series-Laptops/Own-secure-boot-keys-on-T14/m-p/5069436?page=2
-https://github.com/perez987/OpenCore-and-UEFI-Secure-Boot
+- https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot
+- https://wiki.gentoo.org/wiki/User:Sakaki/Sakaki%27s_EFI_Install_Guide/Configuring_Secure_Boot
+- https://habr.com/ru/articles/273497/ (Russian)
+- https://forums.lenovo.com/t5/ThinkPad-T400-T500-and-newer-T-series-Laptops/Own-secure-boot-keys-on-T14/m-p/5069436?page=2
+- https://github.com/perez987/OpenCore-and-UEFI-Secure-Boot
 
 ### What this script does
 
 - Generate and cross-sign keys
-- Download and include Microsoft DB (and optionally KEK) keys 
+- Download and include Microsoft db (and optionally KEK) keys 
 - Download chosen OpenCore version and sign all necessary boot files
 - Sign other .efi executable files (placed into 'user' folder)
 
 ### Requirements
 
-Packages needed: `openssl sbsigntool efitools unzip uuid-runtime curl wget`.
-Recommended OS for running it is Ubuntu 22.04, it has all required packages.
+Packages needed: `openssl sbsigntool efitools unzip uuid-runtime curl wget`.  
+Recommended OS for running it is Ubuntu 22.04, it has all required packages in repos.
 
 A Dockerfile is provided for convenience. Run:
 ```sh
@@ -58,16 +59,16 @@ docker run -it --rm -v "$(pwd):/app" -u $(id -u):$(id -g) sbsign
 
 ### Full mode
 
-In this mode script will create full complement of new PK , KEK (new user key and optionally Microsoft keys) and db (user's key and Microsoft 2011 and 2023 production keys).
+In this mode script will create full complement of new PK , KEK (new user key and optionally Microsoft keys) and db (user key and Microsoft 2011 and 2023 production keys).
 
 It will also create removePK key, an empty file signed with PK - updating PK with it will clear it, entering setup mode without clearing other keys.
 
 To install keys , put them (.auth files inside efikeys folder) onto FAT32 formatted USB drive and boot into UEFI. Find SecureBoot management options. 
-Clear existing keys: Reset keystore/Delete keys/SecureBoot mode: Setup or whatever it is called in your case.
+Clear existing keys via Reset keystore/Delete keys/SecureBoot mode: Setup or whatever it is called in your case.
 
 Then, enroll keys in **exactly this** order: db.auth > KEK.auth > PK.auth
 
-There are other ways to install keys, either via booting KeyTool.efi or using `efi-updatevar` from efitools, depending on whether your motherboard supports that.
+There are other ways to install keys, either via booting KeyTool.efi or using `efi-updatevar` from efitools, depending on whether your motherboard supports that. Installing through UEFI interface is recommended.
 
 Note: this will remove dbx record, which technically decreases security. But if you include Microsoft KEK keys, you will be able to install dbx updates via OS updates as usual.
 
@@ -84,12 +85,13 @@ KEK: List 0, type X509
         Issuer:
             C=JP, ST=Kanagawa, L=Yokohama, O=Lenovo Ltd., CN=Lenovo Ltd. KEK CA 2012
 ```
+If you have that, there are several options.
 
-In case of Thinkpads, there is an option to enroll single record into db without signing it with KEK key. Choose minimal mode in script and generate key, ISK.cer. Copy it onto FAT32-formatted flash drive. Then you would need to go into UEFI > Security > Secure Boot > Key management > DB, use Enroll Key and supply your key and UUID.
+1. In case of Thinkpads, there is an option to enroll single record into db without signing it with KEK key. Choose minimal mode in script and generate image signing key, ISK.cer. Copy it onto FAT32-formatted flash drive. Then you would need to go into UEFI > Security > Secure Boot > Key management > DB, use Enroll Key and supply your key and UUID. Then you can use it to sign executables.
 
-Another option is to enroll hashes of any executable you want to run. It is simpler, but you would have to do that after any executable update.
+2. It may be possible to enroll hashes of specific executables you want to run. It is simpler, no signing requires, but you would have to do that after any executable update.
 
-There is an option to pull stock KEK, db (and dbx) records, add your keys and sign everything with your PK, see links above. I haven't risked trying that.
+3. There is an option to pull stock KEK, db (and dbx) records, add your keys and sign everything with your PK, see links above. I haven't risked trying that.
 
 ### TODO
 
