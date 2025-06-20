@@ -21,7 +21,7 @@ Essentially these are administrator keys.
 
 4. dbx - Forbidden Signatures Database. Similarly to db, this is a blacklist. System with secure boot enabled would boot executables that check against db and do not check against dbx.
 
-Usually PK contains hardware vendor key, and KEK and db contain Microsoft keys. db keys are used to sign Windows bootloader, some other bootloaders (including Linux shim loader) and some hardware ROMs. For compatibility, these should be always included. KEK keys are used to update db and dbx; as that is arguably too much access, including them is left at user's discretion.
+Usually PK contains hardware vendor key, KEK and db contain Microsoft keys and dbx contains some records like revoked keys. db keys are used to sign Windows bootloader, some other bootloaders (including Linux shim loader) and some hardware ROMs. For compatibility, these should be always included. KEK keys are used to update db and dbx; as that is arguably too much access, including them is left at user's discretion.
 
 File formats used:
 
@@ -44,7 +44,7 @@ File formats used:
 - Generate and cross-sign keys
 - Download and include Microsoft db (and optionally KEK) keys 
 - Download chosen OpenCore version and sign all necessary boot files
-- Sign other .efi executable files (placed into 'user' folder)
+- Sign other .efi executable files
 
 ### Requirements
 
@@ -59,12 +59,12 @@ docker run -it --rm -v "$(pwd):/app" -u $(id -u):$(id -g) sbsign
 
 ### Full mode
 
-In this mode script will create full complement of new PK , KEK (new user key and optionally Microsoft keys) and db (user key and Microsoft 2011 and 2023 production keys).
+In this mode script will create full complement of new PK, KEK (new user key and optionally Microsoft keys) and db (user key and Microsoft 2011 and 2023 production keys).
 
 It will also create removePK key, an empty file signed with PK - updating PK with it will clear it, entering setup mode without clearing other keys.
 
-To install keys , put them (.auth files inside efikeys folder) onto FAT32 formatted USB drive and boot into UEFI. Find SecureBoot management options. 
-Clear existing keys via Reset keystore/Delete keys/SecureBoot mode: Setup or whatever it is called in your case.
+To install keys, put them (.auth files inside efikeys folder) onto FAT32 formatted USB drive and boot into UEFI. Find SecureBoot management options. 
+Clear existing keys via Clear keystore/Delete keys/SecureBoot mode: Setup or whatever it is called in your case.
 
 Then, enroll keys in **exactly this** order: db.auth > KEK.auth > PK.auth
 
@@ -74,7 +74,7 @@ Note: this will remove dbx record, which technically decreases security. But if 
 
 ### Minimal mode
 
-Some devices (notably "corporate" Thinkpads with focus on security, T, X and P series) have parts (hardware ROMs or UEFI modules) that depend on additional vendor's keys in DB and KEK. If you delete those keys (by replacing your PK/KEK/db), it will **brick** your UEFI. In case of laptops the only option then is replacing motherboard.  
+Some devices (notably "corporate" Thinkpads with focus on security, T, X and P series) have parts (hardware ROMs and/or UEFI modules) that depend on additional vendor's keys in db and KEK. If you delete those keys (by replacing your PK/KEK/db), it will **brick** your UEFI. In case of laptops the only option then is replacing motherboard.  
 
 To check if this is your case, look into KEK and db, either in UEFI or via `efi-readvar` program from efitools, and check if there are any non-Microsoft entries. E.g.
 ```
@@ -87,16 +87,38 @@ KEK: List 0, type X509
 ```
 If you have that, there are several options.
 
-1. In case of Thinkpads, there is an option to enroll single record into db without signing it with KEK key. Choose minimal mode in script and generate image signing key, ISK.cer. Copy it onto FAT32-formatted flash drive. Then you would need to go into UEFI > Security > Secure Boot > Key management > DB, use Enroll Key and supply your key and UUID. Then you can use it to sign executables.
+1. In case of Thinkpads, there is an option to enroll single record into db without signing it with KEK key. Choose minimal mode in script and generate image signing key, ISK.cer. Copy it onto FAT32-formatted flash drive. Then you would need to go into UEFI > Security > Secure Boot > Key management > DB, use Enroll Key and supply your key and UUID. Then you can boot executables signed with it.
 
 2. It may be possible to enroll hashes of specific executables you want to run. It is simpler, no signing requires, but you would have to do that after any executable update.
 
-3. There is an option to pull stock KEK, db (and dbx) records, add your keys and sign everything with your PK, see links above. I haven't risked trying that.
+3. There is an option to pull stock KEK, db (and dbx) records, add your keys and sign everything with your PK, see links above. This isn't implemented yet, and I don't have a spare Thinkpad to test that.
+
+### Signing files
+
+Script will download release build of OpenCore, latest version by default, and sign following files (X64 versions, of course, may gods help you if you deal with x32 SecureBoot):
+
+- OC/OpenCore.efi
+- OC/Drivers/OpenRuntime.efi
+- OC/Drivers/OpenCanopy.efi
+- OC/Drivers/OpenLinuxBoot.efi
+- OC/Drivers/FirmwareSettingsEntry.efi
+- OC/Drivers/ResetNvramEntry.efi
+- OC/Drivers/ToggleSipEntry.efi
+- OC/Drivers/AudioDxe.efi
+- OC/Tools/OpenShell.efi
+- BOOT/BOOTx64.efi
+- **OC/Drivers/ext4_x64.efi**
+- **OC/Drivers/btrfs_x64.efi**
+
+Last two drivers are from [rEFInd v.0.14.2](https://sourceforge.net/projects/refind/files/0.14.2/) instead, stored in 'binaries' folder. I find them more stable than ones from OCBinaryData.
+
+To sign any other .efi files, place them in 'user' folder, signed files will appear in 'signed/user'.
 
 ### TODO
 
 - [x] Implement removePK key.
 - [ ] Rewrite logic to better protect keys from accidental deletion
+- [ ] Improve security - store private keys elsewhere
 - [ ] Add an option to back up currently installed keys and reuse them
 - [ ] Add an option to choose RSA strength - currently 2048 for compatibility
 - [x] Provide Dockerfile
@@ -104,8 +126,8 @@ If you have that, there are several options.
 
 ### License
 
-This script is licensed under the terms of the GPL v3.
-Content of 'binaries' folder is provided for convenience and is licensed under its own license.
-Based on previous scripts by Roderick W. Smith, profzei, LUKAKEITON, perez987.
+This script is licensed under the terms of the GPL v3.  
+Content of 'binaries' folder is provided for convenience and is licensed under its own license.  
+Based on previous scripts by Roderick W. Smith, profzei, LUKAKEITON, perez987.  
 Made with partial AI assistance (claude-4-sonnet).
 
