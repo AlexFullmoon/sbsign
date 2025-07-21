@@ -23,6 +23,8 @@ Essentially these are administrator keys.
 
 Usually PK contains hardware vendor key, KEK and db contain Microsoft keys and dbx contains some records like revoked keys. db keys are used to sign Windows bootloader, some other bootloaders (including Linux shim loader) and some hardware ROMs. For compatibility, these should be always included. KEK keys are used to update db and dbx; as that is arguably too much access, including them is left at user's discretion.
 
+On a side note, you might've heard about Machine Owner Key. This is a separate security system based on shim loader - shim will load only binaries signed with one of MOKs in its database. Shim itself is still signed with Microsoft production key.
+
 File formats used:
 
 - .key - Private keys in X.509 format used to sign corresponding things. Keep them secure, obviously.
@@ -48,7 +50,7 @@ File formats used:
 
 ### Requirements
 
-Packages needed: `openssl sbsigntool efitools unzip uuid-runtime curl wget`.  
+Packages needed: `openssl sbsigntool efitools unzip uuid-runtime curl wget acl`.  
 Recommended OS for running it is Ubuntu 22.04, it has all required packages in repos.
 
 A Dockerfile is provided for convenience. Run:
@@ -121,6 +123,7 @@ To sign any other .efi files, place them in 'user' folder, signed files will app
 - [ ] Improve security - store private keys elsewhere
 - [ ] Add an option to back up currently installed keys and reuse them
 - [ ] Add an option to choose RSA strength - currently 2048 for compatibility
+- [ ] Add some information about using KeyTool and/or efitools for hardware without key management.
 - [x] Provide Dockerfile
 - [x] Set LICENSE
 

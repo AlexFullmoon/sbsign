@@ -135,12 +135,12 @@ handle_menu_choice() {
 
 # Function to check required tools
 check_required_tools() {
-    local REQUIRED_TOOLS=(openssl wget unzip sbsign cert-to-efi-sig-list sign-efi-sig-list curl uuidgen)
+    local REQUIRED_TOOLS=(openssl wget unzip sbsign cert-to-efi-sig-list sign-efi-sig-list curl uuidgen setfacl)
     for tool in "${REQUIRED_TOOLS[@]}"; do
         if ! command -v "$tool" &>/dev/null; then
             echo "${RC}==>${NC} Error: $tool is not installed. Please install it and rerun the script."
             echo "${RC}==>${NC} Running in Ubuntu 22.04 is recommended"
-            echo "${RC}==>${NC} To install everything run: ${GC}apt install openssl sbsigntool efitools unzip uuid-runtime curl wget${NC}"
+            echo "${RC}==>${NC} To install everything run: ${GC}apt install openssl sbsigntool efitools unzip uuid-runtime curl wget acl${NC}"
             read -rp "Press Enter to continue..."
             return 1
         fi
@@ -303,7 +303,8 @@ handle_key_generation() {
 full_key_generation() {
     if ! [[ -d efikeys ]]; then
         echo -e "${GC}==>${NC} Creating efikeys folder"
-        mkdir -p efikeys
+        mkdir -p -m 0700 efikeys
+        setfacl -PRdm u::rw,g::---,o::--- efikeys
     fi
     cd efikeys
 
@@ -321,7 +322,8 @@ full_key_generation() {
 minimal_key_generation() {
     if ! [[ -d efikeys ]]; then
         echo -e "${GC}==>${NC} Creating efikeys folder"
-        mkdir -p efikeys
+        mkdir -p -m 0700 efikeys
+        setfacl -PRdm u::rw,g::---,o::--- efikeys
     fi
     cd efikeys
     if ! [[ "$DEL_OLD_KEYS" == "n" ]]; then
