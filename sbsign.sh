@@ -508,6 +508,20 @@ sign_user_files() {
     shopt -u nocaseglob
 }
 
+# Function to backup factory keys
+backup_factory_keys() {
+    echo -e "${GC}==>${NC} Backing up currently installed keys"
+    echo -e "${RC}==>${NC} This will require sudo privileges"
+    mkdir -p -m 0700 backup
+    setfacl -PRdm u::rw,g::---,o::--- backup
+    cd backup
+    sudo efi-readvar -v PK -o PK.esl
+    sudo efi-readvar -v KEK -o KEK.esl
+    sudo efi-readvar -v db -o db.esl
+    sudo efi-readvar -v dbx -o dbx.esl
+    cd ..
+}
+
 # Main script execution
 if [[ $# -gt 0 ]]; then 
     if [[ "$1" == "help" ]]; then

@@ -122,9 +122,10 @@ To sign any other .efi files, place them in 'user' folder, signed files will app
 - [ ] Rewrite logic to better protect keys from accidental deletion
 - [x] Improve security - set file permissions
 - [ ] Improve security - store files somewhere else?
-- [ ] Add an option to back up currently installed keys and reuse them
+- [x] Add basic option to back up currently installed keys
 - [x] Add an option to choose RSA strength - by default 2048 for compatibility
 - [ ] Add some information about using KeyTool and/or efitools for hardware without key management.
+- [ ] Add a way to reuse factory keys (for vendor keys in KEK/db)
 - [x] Provide Dockerfile
 - [x] Set LICENSE
 
