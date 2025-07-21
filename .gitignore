@@ -6,4 +6,5 @@ user/*
 efikeys
 mskeys
 download
+backup
 .sbsign_config
