@@ -52,12 +52,16 @@ show_menu() {
     clear
     echo -e "${GC}==>> SecureBoot signing script${NC}"
     echo -e "${GC}=====================================================${NC}"
-    echo -e "1) Switch key generation mode (current: $(get_current_mode))"
+    echo -e "1) Set configuration"
+    echo -e "Current mode: $(get_current_mode), current RSA strength: $(get_current_rsa_strength)"
+    echo -e ""
     echo -e "2) Generate keys"
     echo -e "3) Download and sign OpenCore"
     echo -e "4) Sign .efi files placed in 'user' folder"
-    echo -e "5) Help"
-    echo -e "6) Quit"
+    echo -e "5) Backup currently installed keys"
+    echo -e "6) Help"
+    echo -e ""
+    echo -e "0) Quit"
     echo -e "${GC}======================================================${NC}"
 }
 
@@ -67,6 +71,17 @@ get_current_mode() {
     if [[ -f "$CONFIG_FILE" ]]; then
         local mode=$(grep "^KEY_MODE=" "$CONFIG_FILE" | cut -d'=' -f2)
         echo "$mode"
+    else
+        echo "not set"
+    fi
+}
+
+# Function to get current RSA strength from config
+get_current_rsa_strength() {
+    local CONFIG_FILE=".sbsign_config"
+    if [[ -f "$CONFIG_FILE" ]]; then
+        local rsa_str=$(grep "^RSA_STR=" "$CONFIG_FILE" | cut -d'=' -f2)
+        echo "$rsa_str"
     else
         echo "not set"
     fi
@@ -118,11 +133,14 @@ handle_menu_choice() {
             read -rp "Press Enter to continue..."
             ;;
         5)
-            show_help
+            backup_factory_keys
             read -rp "Press Enter to continue..."
             ;;
         6)
-            
+            show_help
+            read -rp "Press Enter to continue..."
+            ;;
+        0)  
             echo -e "${GC}==>${NC} Exiting..."
             exit 0
             ;;
@@ -184,8 +202,11 @@ handle_config() {
     local CONFIG_FILE=".sbsign_config"
     local OLD_MODE=""
     local KEY_MODE=""
+    local OLD_RSA_STR=""
+    local RSA_STR=""
     if [[ -f "$CONFIG_FILE" ]]; then
         OLD_MODE=$(grep "^KEY_MODE=" "$CONFIG_FILE" | cut -d'=' -f2)
+        OLD_RSA_STR=$(grep "^RSA_STR=" "$CONFIG_FILE" | cut -d'=' -f2)
     fi
 
     echo -e "${GC}==>${NC} Choose key generation mode:"
@@ -202,8 +223,25 @@ handle_config() {
         fi
     done
 
+    echo -e "${GC}==>${NC} Choose RSA key strength:"
+    echo -e "1) 2048 bits (default, compatible)"
+    echo -e "2) 4096 bits (more secure, may not be supported everywhere)"
+    while true; do
+        read -rp "=> Enter choice [1]: " rsa_choice
+        rsa_choice=${rsa_choice:-1}
+        if [[ "$rsa_choice" == "1" ]]; then
+            RSA_STR=2048
+            break
+        elif [[ "$rsa_choice" == "2" ]]; then
+            RSA_STR=4096
+            break
+        else
+            echo -e "${RC}==>${NC} Please enter 1 or 2"
+        fi
+    done
+
     if [[ -n "$OLD_MODE" && "$KEY_MODE" != "$OLD_MODE" && -d efikeys ]]; then
-        echo -e "${RC}==>${NC} WARNING: Switching key mode will delete all previously generated keys!"
+        echo -e "${RC}==>${NC} WARNING: Switching key settings will delete all previously generated keys!"
         read -rp "=> Are you sure you want to continue? This will remove 'efikeys' [y/N]: " confirm
         confirm=${confirm:-n}
         if [[ "$confirm" =~ ^[Yy]$ ]]; then
@@ -215,7 +253,21 @@ handle_config() {
         fi
     fi
 
+    if [[ -n "$OLD_RSA_STR" && "$RSA_STR" != "$OLD_RSA_STR" && -d efikeys ]]; then
+        echo -e "${RC}==>${NC} WARNING: Changing RSA key strength will delete all previously generated keys!"
+        read -rp "=> Are you sure you want to continue? This will remove 'efikeys' [y/N]: " confirm
+        confirm=${confirm:-n}
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            rm -rf efikeys
+            echo -e "${GC}==>${NC} Removed 'efikeys' directory."
+        else
+            echo -e "${RC}==>${NC} RSA key strength change cancelled."
+            return
+        fi
+    fi
+
     echo "KEY_MODE=$KEY_MODE" > "$CONFIG_FILE"
+    echo "RSA_STR=$RSA_STR" >> "$CONFIG_FILE"
     echo "$KEY_MODE"
 }
 
@@ -224,6 +276,13 @@ handle_key_generation() {
     local KEY_MODE="$1"
     local ADD_MS_KEK=""
     local DEL_OLD_KEYS=""
+    # Read RSA_STR from config
+    local CONFIG_FILE=".sbsign_config"
+    if [[ -f "$CONFIG_FILE" ]]; then
+        RSA_STR=$(grep "^RSA_STR=" "$CONFIG_FILE" | cut -d'=' -f2)
+    else
+        RSA_STR=2048
+    fi
 
     if [[ "$KEY_MODE" == "full" ]]; then
         while true; do
@@ -310,9 +369,9 @@ full_key_generation() {
 
     if ! [[ "$DEL_OLD_KEYS" == "n" ]]; then
         echo -e "${GC}==>${NC} Creating PK, KEK and image signing keys"
-        openssl req -new -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes -subj "/CN=Platform Key" -keyout PK.key -out PK.pem
-        openssl req -new -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes -subj "/CN=Key Exchange Key" -keyout KEK.key -out KEK.pem
-        openssl req -new -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes -subj "/CN=Image Signing Key" -keyout ISK.key -out ISK.pem
+        openssl req -new -x509 -newkey rsa:${RSA_STR} -sha256 -days 3650 -nodes -subj "/CN=Platform Key" -keyout PK.key -out PK.pem
+        openssl req -new -x509 -newkey rsa:${RSA_STR} -sha256 -days 3650 -nodes -subj "/CN=Key Exchange Key" -keyout KEK.key -out KEK.pem
+        openssl req -new -x509 -newkey rsa:${RSA_STR} -sha256 -days 3650 -nodes -subj "/CN=Image Signing Key" -keyout ISK.key -out ISK.pem
         chmod 0600 *.key
     fi
     cd ..
@@ -329,7 +388,7 @@ minimal_key_generation() {
     if ! [[ "$DEL_OLD_KEYS" == "n" ]]; then
         echo -e "${GC}==>${NC} Creating image signing key"
         uuidgen --random > GUID.txt
-        openssl req -new -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes -subj "/CN=Personal image signing key/" -keyout ISK.key -out ISK.pem
+        openssl req -new -x509 -newkey rsa:${RSA_STR} -sha256 -days 3650 -nodes -subj "/CN=Personal image signing key/" -keyout ISK.key -out ISK.pem
         openssl x509 -outform DER -in ISK.pem -out ISK.cer
         chmod 0600 *.key
     fi

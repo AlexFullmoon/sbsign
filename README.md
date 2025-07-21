@@ -120,9 +120,10 @@ To sign any other .efi files, place them in 'user' folder, signed files will app
 
 - [x] Implement removePK key.
 - [ ] Rewrite logic to better protect keys from accidental deletion
-- [ ] Improve security - store private keys elsewhere
+- [x] Improve security - set file permissions
+- [ ] Improve security - store files somewhere else?
 - [ ] Add an option to back up currently installed keys and reuse them
-- [ ] Add an option to choose RSA strength - currently 2048 for compatibility
+- [x] Add an option to choose RSA strength - by default 2048 for compatibility
 - [ ] Add some information about using KeyTool and/or efitools for hardware without key management.
 - [x] Provide Dockerfile
 - [x] Set LICENSE
