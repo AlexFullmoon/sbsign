@@ -114,7 +114,13 @@ Script will download release build of OpenCore, latest version by default, and s
 
 Last two drivers are from [rEFInd v.0.14.2](https://sourceforge.net/projects/refind/files/0.14.2/) instead, stored in 'binaries' folder. I find them more stable than ones from OCBinaryData.
 
-To sign any other .efi files, place them in 'user' folder, signed files will appear in 'signed/user'.
+To sign any other .efi files, place them in 'user' folder, signed files will appear in 'signed/user'.  
+
+specifically, to sign Ventoy bootloader. install it *without* SecureBoot support, then mount VTOYEFI partition and sign EFI/BOOT/BOOTX64.EFI. **This will not allow chainloading non-signed binaries**, which improves security compared to booting shim loader with single common key; see [this long thread](https://github.com/ventoy/Ventoy/issues/135) for explanations.
+
+### Backing up keys
+
+Script provides basic backup function via `efi-readvar`, backing up currently installed PK/KEK/db/dbx variables. You will have to restore them manually.
 
 ### TODO
 
