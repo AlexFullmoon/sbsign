@@ -11,7 +11,6 @@ GC='\033[0;32m'
 RC='\033[0;31m'
 NC='\033[0m'
 
-# Function to display help message
 show_help() {
     echo -e "This script can:"
     echo -e "- create signing keys"
@@ -47,7 +46,6 @@ show_help() {
     #exit 0
 }
 
-# Function to display main menu
 show_menu() {
     clear
     echo -e "${GC}==>> SecureBoot signing script${NC}"
@@ -65,7 +63,6 @@ show_menu() {
     echo -e "${GC}======================================================${NC}"
 }
 
-# Function to get current mode from config
 get_current_mode() {
     local CONFIG_FILE=".sbsign_config"
     if [[ -f "$CONFIG_FILE" ]]; then
@@ -76,7 +73,6 @@ get_current_mode() {
     fi
 }
 
-# Function to get current RSA strength from config
 get_current_rsa_strength() {
     local CONFIG_FILE=".sbsign_config"
     if [[ -f "$CONFIG_FILE" ]]; then
@@ -87,7 +83,6 @@ get_current_rsa_strength() {
     fi
 }
 
-# Function to handle menu choice
 handle_menu_choice() {
     local choice="$1"
     case "$choice" in
@@ -100,7 +95,7 @@ handle_menu_choice() {
             fi
             KEY_MODE=$(get_current_mode)
             if [[ "$KEY_MODE" == "not set" ]]; then
-                echo -e "${RC}==>${NC} Error: Key mode not set. Please choose it first."
+                echo -e "${RC}==>${NC} Key mode not set. Please choose it first."
                 read -rp "Press Enter to continue..."
                 return
             fi
@@ -112,7 +107,7 @@ handle_menu_choice() {
                 return
             fi
             if ! [[ -d efikeys ]]; then
-                echo -e "${RC}==>${NC} Error: Keys not generated. Please generate keys first."
+                echo -e "${RC}==>${NC} Keys not generated. Please generate keys first."
                 read -rp "Press Enter to continue..."
                 return
             fi
@@ -125,7 +120,7 @@ handle_menu_choice() {
                 return
             fi
             if ! [[ -d efikeys ]]; then
-                echo -e "${RC}==>${NC} Error: Keys not generated. Please generate keys first."
+                echo -e "${RC}==>${NC} Keys not generated. Please generate keys first."
                 read -rp "Press Enter to continue..."
                 return
             fi
@@ -151,7 +146,6 @@ handle_menu_choice() {
     esac
 }
 
-# Function to check required tools
 check_required_tools() {
     local REQUIRED_TOOLS=(openssl wget unzip sbsign cert-to-efi-sig-list sign-efi-sig-list curl uuidgen setfacl)
     for tool in "${REQUIRED_TOOLS[@]}"; do
@@ -166,7 +160,6 @@ check_required_tools() {
     return 0
 }
 
-# Function to get latest OpenCore version
 get_latest_opencore_version() {
     local latest_version
     latest_version=$(curl -s https://api.github.com/repos/acidanthera/OpenCorePkg/releases/latest | grep -oP '"tag_name": "\K[^"]+')
@@ -177,7 +170,6 @@ get_latest_opencore_version() {
     echo "$latest_version"
 }
 
-# Function to get OpenCore version
 get_opencore_version() {
     local VERSION=""
     local latest_version
@@ -187,7 +179,6 @@ get_opencore_version() {
         read -rp "=> Enter the OpenCore version to use [latest: ${latest_version}]: " VERSION
         if [[ -z "$VERSION" ]]; then
             VERSION="$latest_version"
-            # echo -e "${GC}=>${NC} Using latest version: ${VERSION}"
         fi
         if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo -e "${RC}==>${NC} Invalid version format. Please use e.g., 1.0.4"
@@ -197,7 +188,6 @@ get_opencore_version() {
     echo "$VERSION"
 }
 
-# Function to handle configuration
 handle_config() {
     local CONFIG_FILE=".sbsign_config"
     local OLD_MODE=""
@@ -271,7 +261,6 @@ handle_config() {
     echo "$KEY_MODE"
 }
 
-# Function to handle key generation
 handle_key_generation() {
     local KEY_MODE="$1"
     local ADD_MS_KEK=""
@@ -377,7 +366,6 @@ full_key_generation() {
     cd ..
 }
 
-# Function for minimal key generation
 minimal_key_generation() {
     if ! [[ -d efikeys ]]; then
         echo -e "${GC}==>${NC} Creating efikeys folder"
@@ -452,7 +440,6 @@ handle_ms_certificates() {
     cd ..
 }
 
-# Function to download and sign OpenCore files
 handle_opencore() {
     local VERSION="$1"
     
@@ -495,7 +482,6 @@ handle_opencore() {
     echo -e "${GC}==> OpenCore files signed!${NC}"
 }
 
-# Function to sign user files
 sign_user_files() {
     echo -e "${GC}==>${NC} Signing user files (will be placed into signed/user)${NC}"
     mkdir -p signed/user
@@ -508,7 +494,6 @@ sign_user_files() {
     shopt -u nocaseglob
 }
 
-# Function to backup factory keys
 backup_factory_keys() {
     echo -e "${GC}==>${NC} Backing up currently installed keys"
     mkdir -p -m 0700 backup
