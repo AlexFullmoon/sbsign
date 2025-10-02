@@ -1,8 +1,9 @@
 # Common
 .vscode
 # Project
-signed/*
+signed
 user/*
+!user/.gitkeep
 efikeys
 mskeys
 download
